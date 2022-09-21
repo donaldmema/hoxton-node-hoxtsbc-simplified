@@ -59,7 +59,7 @@ app.post("/sign-up", async (req, res) => {
         include: { transactions: true },
       });
 
-      res.send(user);
+      res.send(user), generateToken(user.id);
     }
   } catch (error) {
     // @ts-ignore
@@ -104,6 +104,60 @@ app.get("/validate", async (req, res) => {
     } else {
       const user = await getCurrentUser(token);
       res.send({ user, token });
+    }
+  } catch (error) {
+    // @ts-ignore
+    res.status(500).send({ error: error.message });
+  }
+});
+
+app.get("/transactions", async (req, res) => {
+  try {
+    const token = req.headers.authorization;
+
+    if (!token) {
+      return res.status(401).send({ error: "You are not signed in!" });
+    } else {
+      const user = await getCurrentUser(token);
+      if (user) {
+        res.send(user.transactions);
+      } else {
+        res.status(401).send({ error: "You are not signed in!" });
+      }
+    }
+  } catch (error) {
+    // @ts-ignore
+    res.status(500).send({ error: error.message });
+  }
+});
+
+app.post("/transactions", async (req, res) => {
+  try {
+    const token = req.headers.authorization;
+
+    if (!token) {
+      return res.status(401).send({ error: "You are not signed in!" });
+    } else {
+      const user = await getCurrentUser(token);
+      if (user) {
+        const { amount, recipient } = req.body;
+
+        const transaction = await prisma.transaction.create({
+          data: {
+            amount,
+            recipient,
+            user: {
+              connect: {
+                id: user.id,
+              },
+            },
+          },
+        });
+
+        res.send(transaction);
+      } else {
+        res.status(401).send({ error: "You are not signed in!" });
+      }
     }
   } catch (error) {
     // @ts-ignore

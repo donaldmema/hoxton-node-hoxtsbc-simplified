@@ -21,6 +21,7 @@ model User {
 model Transaction {
   id        Int      @id @default(autoincrement())
   amount    Int
+  recipient String
   user      User     @relation(fields: [userId], references: [id])
   userId    Int
   createdAt DateTime @default(now())
